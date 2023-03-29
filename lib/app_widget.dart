@@ -1,5 +1,6 @@
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:flutter/material.dart';
+import 'package:haila_display_flutter/face_service.dart';
+import 'package:haila_display_flutter/pages/sign_up_page.dart';
 
 class AppWidget extends StatefulWidget {
   const AppWidget({super.key});
@@ -10,7 +11,19 @@ class AppWidget extends StatefulWidget {
 
 class _AppWidgetState extends State<AppWidget> {
   @override
+  void initState() {
+    super.initState();
+    final service = FaceService();
+
+    service.initialize();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return const MaterialApp(
+      home: Scaffold(
+        body: SignUp(),
+      ),
+    );
   }
 }
