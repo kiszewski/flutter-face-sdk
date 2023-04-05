@@ -4,6 +4,7 @@ import io.flutter.embedding.android.FlutterActivity
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.nio.ByteBuffer
 
 
 class MainActivity: FlutterActivity() {
@@ -24,6 +25,30 @@ class MainActivity: FlutterActivity() {
                 }
             } else if (call.method == "getTemplateFromPath") {
                 val template = service.createTemplateFromPath(call.arguments.toString())
+
+                if (template.isNotEmpty()) {
+                    result.success(template)
+                } else {
+                    result.error("ERROR", "Cannot get template.", null)
+                }
+            } else if (call.method == "getTemplate") {
+                val width = call.argument<Int>("width")
+                val height = call.argument<Int>("height")
+                val pixels = call.argument<IntArray>("pixels")
+
+                val template = service.createTemplateFromPixels(pixels!!, width!!, height!!)
+
+                if (template.isNotEmpty()) {
+                    result.success(template)
+                } else {
+                    result.error("ERROR", "Cannot get template.", null)
+                }
+            } else if (call.method == "getTemplateFromBuffer") {
+                val width = call.argument<Int>("width")
+                val height = call.argument<Int>("height")
+                val pixels = call.argument<ByteArray>("pixels")
+
+                val template = service.createTemplate(pixels!!, width!!, height!!)
 
                 if (template.isNotEmpty()) {
                     result.success(template)
