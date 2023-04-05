@@ -24,10 +24,11 @@ class CameraService {
   Future _setupCameraController({
     required CameraDescription description,
   }) async {
-    this._cameraController = CameraController(
+    _cameraController = CameraController(
       description,
-      ResolutionPreset.high,
+      ResolutionPreset.veryHigh,
       enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.bgra8888,
     );
     await _cameraController?.initialize();
   }

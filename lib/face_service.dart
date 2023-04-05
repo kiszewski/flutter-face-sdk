@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class FaceService {
@@ -13,18 +16,47 @@ class FaceService {
     }
   }
 
-  Future<List> getTemplate(Uint8List bytes, int width, int height) async {
+  Future<List> getTemplate(List<int> pixels, int width, int height) async {
     try {
+      final newPixels = Int32List.fromList(pixels);
+
       final resp = await _platform.invokeMethod(
         'getTemplate',
+        {
+          'width': width,
+          'height': height,
+          'pixels': newPixels,
+        },
       );
 
-      print(resp);
+      // print(resp);
+
+      return resp;
     } catch (e) {
       print(e);
+      return [];
     }
+  }
 
-    return [];
+  Future<List> getTemplateFromBuffer(
+      Uint8List buffer, int width, int height) async {
+    try {
+      final resp = await _platform.invokeMethod(
+        'getTemplateFromBuffer',
+        {
+          'width': width,
+          'height': height,
+          'pixels': buffer,
+        },
+      );
+
+      // print(resp);
+
+      return resp;
+    } catch (e) {
+      print(e);
+      return [];
+    }
   }
 
   Future<List> getTemplateFromPath(String filePath) async {

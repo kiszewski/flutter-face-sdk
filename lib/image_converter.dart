@@ -10,6 +10,8 @@ imglib.Image convertToImage(CameraImage image) {
       return _convertYUV420(image);
     } else if (image.format.group == ImageFormatGroup.bgra8888) {
       return _convertBGRA8888(image);
+    } else if (image.format.group == ImageFormatGroup.jpeg) {
+      return imglib.decodeJpg(image.planes[0].bytes)!;
     }
     throw Exception('Image format not supported');
   } catch (e) {
@@ -36,7 +38,7 @@ imglib.Image _convertBGRA8888(CameraImage image) {
     image.width,
     image.height,
     image.planes[0].bytes,
-    format: imglib.Format.bgra,
+    format: imglib.Format.rgb,
   );
 }
 
@@ -63,6 +65,8 @@ imglib.Image _convertYUV420(CameraImage image) {
       img.data[index] = hexFF | (b << 16) | (g << 8) | r;
     }
   }
+
+  print(img.data.length);
 
   return img;
 }

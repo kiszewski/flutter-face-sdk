@@ -6,6 +6,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:haila_display_flutter/camera_service.dart';
 import 'package:haila_display_flutter/face_service.dart';
+import 'package:haila_display_flutter/image_converter.dart';
+import 'package:image/image.dart' as imglib;
 
 class SignUp extends StatefulWidget {
   const SignUp({Key? key}) : super(key: key);
@@ -24,7 +26,7 @@ class SignUpState extends State<SignUp> {
 
   bool _initializing = false;
 
-  bool _bottomSheetVisible = false;
+  bool isProcessing = false;
 
   // service injection
   final CameraService _cameraService = CameraService();
@@ -46,6 +48,29 @@ class SignUpState extends State<SignUp> {
     setState(() => _initializing = true);
     await _cameraService.initialize();
     await _faceService.initialize();
+    await _cameraService.cameraController!.startImageStream((img) async {
+      if (!isProcessing) {
+        isProcessing = true;
+
+        final image = convertToImage(img);
+        final imgRotated = imglib.copyRotate(image, -90);
+
+        final width = imgRotated.width;
+        final height = imgRotated.height;
+        final pixels = imgRotated.data;
+
+        final template = await _faceService.getTemplate(
+          pixels,
+          width,
+          height,
+        );
+
+        await Future.delayed(const Duration(seconds: 1));
+
+        isProcessing = false;
+      }
+    });
+
     setState(() => _initializing = false);
   }
 
@@ -59,7 +84,6 @@ class SignUpState extends State<SignUp> {
     final template = await _faceService.getTemplateFromPath(imagePath!);
 
     setState(() {
-      _bottomSheetVisible = true;
       pictureTaken = true;
       template1 = template;
     });
@@ -77,7 +101,6 @@ class SignUpState extends State<SignUp> {
     final template = await _faceService.getTemplateFromPath(imagePath!);
 
     setState(() {
-      _bottomSheetVisible = true;
       pictureTaken = true;
       template2 = template;
     });
@@ -161,9 +184,8 @@ class SignUpState extends State<SignUp> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: !_bottomSheetVisible
-          ? FloatingActionButton(onPressed: onShot1)
-          : Container(),
+      floatingActionButton: FloatingActionButton(onPressed: onShot1),
     );
   }
 }
+//921600 pixels
