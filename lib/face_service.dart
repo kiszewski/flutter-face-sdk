@@ -29,29 +29,6 @@ class FaceService {
         },
       );
 
-      // print(resp);
-
-      return resp;
-    } catch (e) {
-      print(e);
-      return [];
-    }
-  }
-
-  Future<List> getTemplateFromBuffer(
-      Uint8List buffer, int width, int height) async {
-    try {
-      final resp = await _platform.invokeMethod(
-        'getTemplateFromBuffer',
-        {
-          'width': width,
-          'height': height,
-          'pixels': buffer,
-        },
-      );
-
-      // print(resp);
-
       return resp;
     } catch (e) {
       print(e);
@@ -74,7 +51,7 @@ class FaceService {
     }
   }
 
-  Future<double> matchTemplates(List template1, List template2) async {
+  Future<bool> matchTemplates(List template1, List template2) async {
     try {
       final Uint8List t1Parsed = template1 as Uint8List;
       final Uint8List t2Parsed = template2 as Uint8List;
@@ -87,11 +64,11 @@ class FaceService {
         ],
       );
 
-      print(resp);
+      return resp;
     } catch (e) {
       print(e);
     }
 
-    return 0;
+    return false;
   }
 }
