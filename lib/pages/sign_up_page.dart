@@ -22,10 +22,10 @@ class SignUpState extends State<SignUp> {
 
   List? template1;
   List? template2;
-  bool pictureTaken = false;
 
+  bool isComparing = false;
+  bool isMatch = false;
   bool _initializing = false;
-
   bool isProcessing = false;
 
   // service injection
@@ -48,35 +48,47 @@ class SignUpState extends State<SignUp> {
     setState(() => _initializing = true);
     await _cameraService.initialize();
     await _faceService.initialize();
-    await _cameraService.cameraController!.startImageStream((img) async {
-      if (!isProcessing) {
-        isProcessing = true;
-
-        final image = convertToImage(img);
-        final imgRotated = imglib.copyRotate(image, -90);
-
-        final width = imgRotated.width;
-        final height = imgRotated.height;
-        final pixels = imgRotated.data;
-
-        final template = await _faceService.getTemplate(
-          pixels,
-          width,
-          height,
-        );
-
-        await Future.delayed(const Duration(seconds: 1));
-
-        isProcessing = false;
-      }
-    });
+    await _cameraService.cameraController!
+        .startImageStream(_onReceiveCameraStream);
 
     setState(() => _initializing = false);
   }
 
+  _onReceiveCameraStream(CameraImage img) async {
+    if (!isProcessing) {
+      isProcessing = true;
+
+      final image = convertToImage(img);
+      final imgRotated = imglib.copyRotate(image, -90);
+
+      final width = imgRotated.width;
+      final height = imgRotated.height;
+      final pixels = imgRotated.data;
+
+      final template = await _faceService.getTemplate(
+        pixels,
+        width,
+        height,
+      );
+
+      if (template1 != null) {
+        setState(() => isComparing = true);
+        final isMatched =
+            await _faceService.matchTemplates(template, template1!);
+
+        setState(() => isMatch = isMatched);
+        setState(() => isComparing = false);
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      isProcessing = false;
+    }
+  }
+
   Future<bool> onShot1() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    // await _cameraService.cameraController?.stopImageStream();
+    await _cameraService.cameraController?.stopImageStream();
     await Future.delayed(const Duration(milliseconds: 200));
     XFile? file = await _cameraService.takePicture();
     imagePath = file?.path;
@@ -84,58 +96,23 @@ class SignUpState extends State<SignUp> {
     final template = await _faceService.getTemplateFromPath(imagePath!);
 
     setState(() {
-      pictureTaken = true;
       template1 = template;
     });
 
-    return true;
-  }
-
-  Future<bool> onShot2() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    // await _cameraService.cameraController?.stopImageStream();
-    await Future.delayed(const Duration(milliseconds: 200));
-    XFile? file = await _cameraService.takePicture();
-    imagePath = file?.path;
-
-    final template = await _faceService.getTemplateFromPath(imagePath!);
-
-    setState(() {
-      pictureTaken = true;
-      template2 = template;
-    });
+    await _cameraService.cameraController
+        ?.startImageStream(_onReceiveCameraStream);
 
     return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    const double mirror = math.pi;
     final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
 
     late Widget body;
-    if (_initializing) {
-      body = const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
+    if (_initializing) body = const Center(child: CircularProgressIndicator());
 
-    if (!_initializing && pictureTaken) {
-      body = SizedBox(
-        width: width,
-        height: height,
-        child: Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.rotationY(mirror),
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: Image.file(File(imagePath!)),
-            )),
-      );
-    }
-
-    if (!_initializing && !pictureTaken) {
+    if (!_initializing) {
       body = Transform.scale(
         scale: 1.0,
         child: AspectRatio(
@@ -165,26 +142,24 @@ class SignUpState extends State<SignUp> {
       body: Stack(
         children: [
           body,
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              OutlinedButton(
-                onPressed: onShot2,
-                child: Text('shot 2'),
-              ),
-              OutlinedButton(
-                onPressed: () {
-                  if (template1 != null && template2 != null)
-                    _faceService.matchTemplates(template1!, template2!);
-                },
-                child: Text('MATCH'),
-              ),
-            ],
-          )
+          if (isComparing)
+            const Align(
+              alignment: Alignment.topLeft,
+              child: CircularProgressIndicator(),
+            ),
+          if (isMatch)
+            const Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.check,
+                  size: 32,
+                  color: Colors.green,
+                )),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(onPressed: onShot1),
+      floatingActionButton: FloatingActionButton(
+          onPressed: onShot1, child: const Icon(Icons.camera)),
     );
   }
 }
