@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:math' as math;
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:haila_display_flutter/camera_service.dart';
-import 'package:haila_display_flutter/face_service.dart';
-import 'package:haila_display_flutter/image_converter.dart';
-import 'package:haila_display_flutter/image_converter_service.dart';
+import 'package:haila_display_flutter/services/camera_service.dart';
+import 'package:haila_display_flutter/services/face_service.dart';
+import 'package:haila_display_flutter/services/image_converter_service.dart';
 import 'package:image/image.dart' as imglib;
 
 class SignUp extends StatefulWidget {
