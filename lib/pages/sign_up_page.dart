@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:haila_display_flutter/camera_service.dart';
 import 'package:haila_display_flutter/face_service.dart';
 import 'package:haila_display_flutter/image_converter.dart';
+import 'package:haila_display_flutter/image_converter_service.dart';
 import 'package:image/image.dart' as imglib;
 
 class SignUp extends StatefulWidget {
@@ -31,6 +32,7 @@ class SignUpState extends State<SignUp> {
   // service injection
   final CameraService _cameraService = CameraService();
   final FaceService _faceService = FaceService();
+  final ImageConverterService _imgService = ImageConverterService();
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class SignUpState extends State<SignUp> {
   @override
   void dispose() {
     _cameraService.dispose();
+    _imgService.dispose();
     super.dispose();
   }
 
@@ -48,6 +51,8 @@ class SignUpState extends State<SignUp> {
     setState(() => _initializing = true);
     await _cameraService.initialize();
     await _faceService.initialize();
+    await _imgService.initialize();
+
     await _cameraService.cameraController!
         .startImageStream(_onReceiveCameraStream);
 
@@ -58,18 +63,21 @@ class SignUpState extends State<SignUp> {
     if (!isProcessing) {
       isProcessing = true;
 
-      final image = convertToImage(img);
+      final image = await _imgService.convert(img);
+
+      if (image == null) {
+        isProcessing = false;
+        return;
+      }
+
+      // final image = imglib.Image(10, 10);
       final imgRotated = imglib.copyRotate(image, -90);
 
       final width = imgRotated.width;
       final height = imgRotated.height;
       final pixels = imgRotated.data;
 
-      final template = await _faceService.getTemplate(
-        pixels,
-        width,
-        height,
-      );
+      final template = await _faceService.getTemplate(pixels, width, height);
 
       if (template1 != null) {
         setState(() => isComparing = true);
